@@ -4,7 +4,7 @@ If you are looking for the easy way to run your JRuby application and to indicat
 single place, this library might be one of the acceptable options for you. Please take a look at the alternatives
 first, like [JBundler](https://github.com/mkristian/jbundler) and [Doubleshot](https://github.com/sam/doubleshot).
 Jrmvnrunner simply creates the temporary Gemfile and pom.xml for your project according to your setup and then
-invokes bundle install and mvn install accordingly. This is very simple and transparent approach to collect all the
+invokes bundle install and mvn install accordingly. This is a very simple and transparent approach to collect all the
 required dependencies specified in a single file.
 
 ## Why?
