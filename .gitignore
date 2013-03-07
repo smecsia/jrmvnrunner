@@ -4,6 +4,7 @@ atlassian-ide-plugin.xml
 .idea
 target
 *.iml
+*.gem
 smartfox-server-local
 tmp
 # Ignore bundler config
