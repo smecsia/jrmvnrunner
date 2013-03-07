@@ -8,9 +8,9 @@ case command
     cmd = args.shift
     Jrmvnrunner.init!(Dir.pwd, cmd, args)
   when "help"
-    puts "jrmvnrunner exec [COMMAND]"
+    puts "jrmvnrun exec [COMMAND]"
   else
-    puts "Unknown command '#{command}'! Exec jrmvnrunner help to see the options!"
+    puts "Unknown command '#{command}'! Exec jrmvnrun help to see the options!"
 end
 
 
