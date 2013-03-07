@@ -1,5 +1,7 @@
 require 'pathname'
 require 'tempfile'
+require 'tmpdir'
+require 'securerandom'
 require 'yaml'
 
 module Jrmvnrunner
@@ -11,6 +13,7 @@ module Jrmvnrunner
       @gem = opts[:gem] || Dsl::Gem.new
       @root = opts[:root] || root
       @cmd = cmd
+      @tmpdir = opts[:tmpdir]
       @config = YAML::load(File.read(cfg_file)) if File.exists?(cfg_file)
       @config ||= {}
       @opts[:project] ||= {:group_id => 'test', :artifact_id => 'test', :version => '0.1-SNAPSHOT'}
@@ -20,6 +23,7 @@ module Jrmvnrunner
       log "Current directory: #{Dir.pwd}"
 
       ensure_jruby!
+      write_gem!
       ensure_bundle!
       write_pom!
       maven_build!
@@ -77,7 +81,7 @@ module Jrmvnrunner
     end
 
     def jar_files
-      Dir[root.join("target", "#{@opts[:project][:name]}", "*.jar")]
+      Dir[Pathname.new(build_dir).join("#{@opts[:project][:name]}", "*.jar")]
     end
 
     def gems_list
@@ -124,13 +128,24 @@ module Jrmvnrunner
     end
 
     def gem_file
-      @gem_file ||= Pathname.new(Dir::tmpdir).join(Tempfile.new('Gemfile').path).to_s
+      @gem_file ||= Pathname.new(tmpdir).join('Gemfile').to_s
       @gem_file
     end
 
     def pom_file
-      @pom_file ||= Pathname.new(Dir::tmpdir).join(Tempfile.new('pom.xml').path).to_s
+      @pom_file ||= Pathname.new(tmpdir).join('pom.xml').to_s
       @pom_file
+    end
+
+    def tmpdir
+      @tmpdir ||= Pathname.new(Etc.systmpdir).join(SecureRandom.hex(5)).to_s
+      FileUtils.mkdir_p(@tmpdir)
+      @tmpdir
+    end
+
+    def build_dir
+      @builddir ||= Pathname.new(tmpdir).join('target').to_s
+      @builddir
     end
 
     def generate_gem
@@ -138,14 +153,14 @@ module Jrmvnrunner
     end
 
     def write_gem!
-      log "Writing temprorary Gemfile: #{gem_file}"
+      log "Writing temporary Gemfile: #{gem_file}"
       File.open(gem_file, "w+") do |f|
         f.write(generate_gem)
       end
     end
 
     def write_pom!
-      log "Writing temprorary Pomfile: #{pom_file}"
+      log "Writing temporary Pomfile: #{pom_file}"
       File.open(pom_file, "w+") do |f|
         f.write(generate_pom)
       end
@@ -201,6 +216,7 @@ module Jrmvnrunner
     </dependencies>
     <build>
         <finalName>#{@opts[:project][:name]}</finalName>
+        <directory>#{build_dir}</directory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
