@@ -27,7 +27,6 @@ module Jrmvnrunner
       ensure_bundle!
       write_pom!
       maven_build!
-      remove_gem_and_pom!
 
       if @cmd
         # Generating command and exec...
@@ -38,7 +37,9 @@ module Jrmvnrunner
       else
         require 'java'
         ENV['BUNDLE_GEMFILE'] = gem_file
-        require 'bundler/setup'
+        require 'bundler'
+        Bundler.definition.validate_ruby!
+        Bundler.load.setup_environment
         jar_files.each { |jf| require jf }
       end
     end
@@ -209,8 +210,9 @@ module Jrmvnrunner
             <artifactId>#{d[:artifact_id]}</artifactId>
             <version>#{d[:version]}</version>
             <type>#{d[:type]}</type>
+            #{ (d[:classifier]) ? "<classifier>#{d[:classifier]}</classifier>" : ""}
         </dependency>
-          ]
+        ]
       end.join("\n")
       }
     </dependencies>

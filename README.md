@@ -39,11 +39,26 @@ end
 Then you can execute:
 
 ```
-jrmvnrun exec rake features
+jrmvnrun exec cucumber
 ```
 
 This will execute a command with the full jar dependencies list in the classpath,
 so you can use them inside your ruby code.
+
+## Programmatic setup
+
+You can also setup Jrmvnrunner to use your environment just right from the code by adding the following code to your
+environment script (this could be any ruby script that loads first):
+
+```ruby
+require 'rubygems'
+require 'jrmvnrunner'
+
+Jrmvnrunner.init!
+```
+
+This will allow you to run the simple commands without the necessity to run them using "jrmvnrun exec CMD". For
+example, you can add this code to the features/support/env.rb and run the particular "rake features" command.
 
 ## How to install
 

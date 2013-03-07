@@ -16,6 +16,6 @@ Gem::Specification.new do |s|
 
   s.executables = ['jrmvnrun']
   s.default_executable = 'jrmvnrun'
-
+  s.require_path = 'lib'
   s.files = Dir['{bin,lib,spec}/**/*','README*']
 end
