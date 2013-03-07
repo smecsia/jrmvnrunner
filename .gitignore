@@ -1,0 +1,14 @@
+#Ignore idea
+*.ipr
+atlassian-ide-plugin.xml
+.idea
+target
+*.iml
+smartfox-server-local
+tmp
+# Ignore bundler config
+/.jbundler
+/.bundle
+config/*.yml
+.doubleshot_test.pid
+.classpath.cache

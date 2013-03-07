@@ -1,0 +1,222 @@
+require 'pathname'
+require 'tempfile'
+require 'yaml'
+
+module Jrmvnrunner
+  class Runner
+    def initialize(cmd = nil, opts={})
+      @args = opts[:args] || []
+      @opts = opts
+      @pom = opts[:pom] || Dsl::Pom.new
+      @gem = opts[:gem] || Dsl::Gem.new
+      @root = opts[:root] || root
+      @cmd = cmd
+      @config = YAML::load(File.read(cfg_file)) if File.exists?(cfg_file)
+      @config ||= {}
+      @opts[:project] ||= {:group_id => 'test', :artifact_id => 'test', :version => '0.1-SNAPSHOT'}
+    end
+
+    def execute!
+      log "Current directory: #{Dir.pwd}"
+
+      ensure_jruby!
+      ensure_bundle!
+      write_pom!
+      maven_build!
+      remove_gem_and_pom!
+
+      if @cmd
+        # Generating command and exec...
+        ensure_cmd!
+        cmd=%Q["#{cmd_path("jruby")}" #{cp_string} #{jruby_opts} "#{cmd_path(@cmd)}" #{@args.join(" ")}]
+        log "Executing '#{cmd}'..."
+        exec cmd
+      else
+        require 'java'
+        ENV['BUNDLE_GEMFILE'] = gem_file
+        require 'bundler/setup'
+        jar_files.each { |jf| require jf }
+      end
+    end
+
+    private
+
+    def cfg_file
+      root.join("config", "adapter.yml")
+    end
+
+    def which_cmd
+      windows? ? "where" : "which"
+    end
+
+    def jruby_opts
+      @opts[:jruby_opts] || "--1.9"
+    end
+
+    def windows?
+      @opts[:platform] == "windows"
+    end
+
+    def root
+      @root ||= Pathname.new(File.expand_path(File.join(File.dirname(__FILE__), '..')))
+      @root
+    end
+
+    def cp_join_sign
+      windows? ? ";" : ":"
+    end
+
+    def cmd_path(cmd)
+      @config["#{cmd}.bin"] || `#{which_cmd} #{cmd}`.split("\n").select { |l| !l.nil? && !l.empty? }.first
+    end
+
+    def cp_string
+      # Searching through dependent jars
+      cp = jar_files.join(cp_join_sign)
+      %Q{-J-cp "#{cp}"}
+    end
+
+    def jar_files
+      Dir[root.join("target", "#{@opts[:project][:name]}", "*.jar")]
+    end
+
+    def gems_list
+      `"#{cmd_path("jgem")}" list`
+    end
+
+    def ensure_cmd!
+      raise "Cannot find command '#{@cmd}': (tried '#{which_cmd} #{@cmd}')!" if cmd_path(@cmd).nil?
+    end
+
+    def ensure_jruby!
+      raise "Cannot find valid JRuby installation (tried command '#{which_cmd} jruby')!" if cmd_path("jruby").nil?
+    end
+
+    def ensure_bundle!
+      unless gems_list =~ /bundler/
+        log "Installing bundler..."
+        res = `"#{cmd_path("jgem")}" install bundler`
+        raise "Cannot install bundler: \n #{res}" unless res =~ /Successfully installed bundler/
+      end
+      log "Installing bundle..."
+      res = `"#{cmd_path("bundle")}" install --gemfile #{gem_file}`
+      raise "Cannot install bundle: \n #{res}" unless res =~ /Your bundle is complete!/
+    end
+
+    def maven_build!
+      # Building Maven dependencies...
+      raise "Cannot find valid Maven installation (tried command '#{which_cmd} mvn')!" if cmd_path("mvn").nil?
+      log "Building dependencies..."
+      build_res = `"#{cmd_path("mvn")}" -f #{pom_file} clean install`
+      raise "Cannot build project: \n #{build_res}" unless build_res =~ /BUILD SUCCESS/
+    end
+
+    def log(msg)
+      puts msg
+    end
+
+    def gem
+      @gem
+    end
+
+    def pom
+      @pom
+    end
+
+    def gem_file
+      @gem_file ||= Pathname.new(Dir::tmpdir).join(Tempfile.new('Gemfile').path).to_s
+      @gem_file
+    end
+
+    def pom_file
+      @pom_file ||= Pathname.new(Dir::tmpdir).join(Tempfile.new('pom.xml').path).to_s
+      @pom_file
+    end
+
+    def generate_gem
+      @gem.source
+    end
+
+    def write_gem!
+      log "Writing temprorary Gemfile: #{gem_file}"
+      File.open(gem_file, "w+") do |f|
+        f.write(generate_gem)
+      end
+    end
+
+    def write_pom!
+      log "Writing temprorary Pomfile: #{pom_file}"
+      File.open(pom_file, "w+") do |f|
+        f.write(generate_pom)
+      end
+    end
+
+    def remove_gem_and_pom!
+      File.unlink(gem_file)
+      File.unlink(pom_file)
+    end
+
+    def generate_pom
+      <<-XML
+<?xml version="1.0" encoding="UTF-8"?>
+  <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>#{@opts[:project][:group_id]}</groupId>
+    <artifactId>#{@opts[:project][:name]}</artifactId>
+    <version>#{@opts[:project][:version]}</version>
+    <packaging>ear</packaging>
+
+    <properties>
+        <project.compiler.version>1.6</project.compiler.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    </properties>
+
+    <repositories>
+        #{
+      pom.repositories.map do |r|
+        %Q[
+            <repository>
+                <id>#{r[:name]}</id>
+                <name>#{r[:description]}</name>
+                <url>#{r[:url]}</url>
+            </repository>
+          ]
+      end.join("\n")
+      }
+    </repositories>
+
+    <dependencies>
+        #{
+      pom.dependencies.map do |d|
+        %Q[
+        <dependency>
+            <groupId>#{d[:group_id]}</groupId>
+            <artifactId>#{d[:artifact_id]}</artifactId>
+            <version>#{d[:version]}</version>
+            <type>#{d[:type]}</type>
+        </dependency>
+          ]
+      end.join("\n")
+      }
+    </dependencies>
+    <build>
+        <finalName>#{@opts[:project][:name]}</finalName>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                    <source>${project.compiler.version}</source>
+                    <target>${project.compiler.version}</target>
+                    <optimize>true</optimize>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+</project>
+      XML
+    end
+  end
+end

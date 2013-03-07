@@ -1,0 +1,16 @@
+#!/usr/bin/env jruby
+require File.expand_path(File.join(File.dirname(__FILE__), '../lib/jrmvnrunner.rb'))
+
+args = ARGV.dup
+command = args.shift
+case command
+  when "exec"
+    cmd = args.shift
+    Jrmvnrunner.init!(Dir.pwd, cmd, args)
+  when "help"
+    puts "jrmvnrunner exec [COMMAND]"
+  else
+    puts "Unknown command '#{command}'! Exec jrmvnrunner help to see the options!"
+end
+
+

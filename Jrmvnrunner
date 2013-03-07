@@ -1,0 +1,16 @@
+project 'test:test:0.1'
+
+Pomfile do
+    source 'http://maven.smecsia.me'
+    jar 'commons-lang:commons-lang:2.6:jar'
+end
+
+Gemfile do
+    source :rubygems
+    gem 'json'
+    gem 'rspec', '~> 2.12.0'
+    gem 'rake', '10.0.3'
+    gem 'activesupport', '~> 3.2.8'
+    gem 'activerecord', '~> 3.2.8'
+    gem 'cucumber'
+end
