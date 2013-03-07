@@ -1,7 +1,7 @@
 # JRMVNRunner
 
-If you are looking for the easy way to run your JRuby application and to indicate the jar dependencies in a single
-place, this library might be one of the acceptable variants for you. Please take a look at the analogues first,
+If you are looking for the easy way to run your JRuby application and to indicate the gem and jar dependencies in a
+single place, this library might be one of the acceptable options for you. Please take a look at the analogues first,
 like [JBundler](https://github.com/mkristian/jbundler) and [Doubleshot](https://github.com/sam/doubleshot).
 
 ## Why?
