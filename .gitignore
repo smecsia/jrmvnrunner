@@ -13,3 +13,4 @@ tmp
 config/*.yml
 .doubleshot_test.pid
 .classpath.cache
+.Jrmvnrunner.cache

@@ -22,11 +22,17 @@ module Jrmvnrunner
     def execute!
       log "Current directory: #{Dir.pwd}"
 
-      ensure_jruby!
-      write_gem!
-      ensure_bundle!
-      write_pom!
-      maven_build!
+      if cached_dir.nil?
+        ensure_jruby!
+        ensure_mvn!
+        write_gem!
+        ensure_bundle!
+        write_pom!
+        maven_build!
+        create_cache_file!
+      else
+        @tmpdir = cached_dir
+      end
 
       if @cmd
         # Generating command and exec...
@@ -81,6 +87,20 @@ module Jrmvnrunner
       %Q{-J-cp "#{cp}"}
     end
 
+    def cache_file
+      root.join(".Jrmvnrunner.cache")
+    end
+
+    def cached_dir
+      (File.exists?(cache_file)) ? File.read(cache_file).strip : nil
+    end
+
+    def create_cache_file!
+      File.open(cache_file, "w+") do |f|
+        f.write(tmpdir)
+      end
+    end
+
     def jar_files
       Dir[Pathname.new(build_dir).join("#{@opts[:project][:name]}", "*.jar")]
     end
@@ -97,6 +117,11 @@ module Jrmvnrunner
       raise "Cannot find valid JRuby installation (tried command '#{which_cmd} jruby')!" if cmd_path("jruby").nil?
     end
 
+    def ensure_mvn!
+      # Building Maven dependencies...
+      raise "Cannot find valid Maven installation (tried command '#{which_cmd} mvn')!" if cmd_path("mvn").nil?
+    end
+
     def ensure_bundle!
       unless gems_list =~ /bundler/
         log "Installing bundler..."
@@ -109,8 +134,6 @@ module Jrmvnrunner
     end
 
     def maven_build!
-      # Building Maven dependencies...
-      raise "Cannot find valid Maven installation (tried command '#{which_cmd} mvn')!" if cmd_path("mvn").nil?
       log "Building dependencies..."
       build_res = `"#{cmd_path("mvn")}" -f #{pom_file} clean install`
       raise "Cannot build project: \n #{build_res}" unless build_res =~ /BUILD SUCCESS/
@@ -165,11 +188,6 @@ module Jrmvnrunner
       File.open(pom_file, "w+") do |f|
         f.write(generate_pom)
       end
-    end
-
-    def remove_gem_and_pom!
-      File.unlink(gem_file)
-      File.unlink(pom_file)
     end
 
     def generate_pom
