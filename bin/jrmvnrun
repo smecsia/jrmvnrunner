@@ -7,8 +7,12 @@ case command
   when "exec"
     cmd = args.shift
     Jrmvnrunner.init!(Dir.pwd, cmd, args)
+  when "install"
+    Jrmvnrunner.install!(Dir.pwd)
   when "help"
-    puts "jrmvnrun exec [COMMAND]"
+    puts "Available options are: exec, install"
+    puts "INSTALL: jrmvnrun install - forces Jrmvnrunner to clean the cache"
+    puts "EXEC: jrmvnrun exec [COMMAND] - executes the COMMAND with classpath"
   else
     puts "Unknown command '#{command}'! Exec jrmvnrun help to see the options!"
 end

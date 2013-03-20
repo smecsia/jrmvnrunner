@@ -50,6 +50,10 @@ module Jrmvnrunner
       end
     end
 
+    def clean_cache!
+      File.unlink(cache_file) if File.exists?(cache_file)
+    end
+
     private
 
     def cfg_file
