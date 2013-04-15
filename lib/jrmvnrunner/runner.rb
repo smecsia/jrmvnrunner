@@ -22,7 +22,7 @@ module Jrmvnrunner
     def execute!
       log "Current directory: #{Dir.pwd}"
 
-      if cached_dir.nil? || !File.directory?(cached_dir)
+      if cached_dir.nil? || !File.exists?(cached_dir)
         ensure_jruby!
         ensure_mvn!
         write_gem!
