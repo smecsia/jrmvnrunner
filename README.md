@@ -7,6 +7,9 @@ Jrmvnrunner simply creates the temporary Gemfile and pom.xml for your project ac
 invokes bundle install and mvn install accordingly. This is a very simple and transparent approach to collect all the
 required dependencies specified in a single file.
 
+Check out [this blog post](http://smecsia.me/blog/78/Smartfox+Integration+testing+with+Cucumber) 
+to see how this library can be used.
+
 ## Why?
 
 Doubleshot looks ok, but it requires java 1.7+. JBundler is good, but sometimes does not do what you want.
