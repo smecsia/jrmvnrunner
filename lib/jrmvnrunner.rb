@@ -1,7 +1,7 @@
 require 'pathname'
 
 module Jrmvnrunner
-  VERSION="0.1.6"
+  VERSION="0.1.7"
   MYDIR = Pathname.new(File.dirname(File.expand_path(__FILE__)))
   autoload :Runner, MYDIR.join('jrmvnrunner/runner')
   autoload :Dsl, MYDIR.join('jrmvnrunner/dsl')

@@ -13,7 +13,7 @@ Gem::Specification.new do |s|
   s.description = %q{This gem allows you to specify the jar-dependencies of your project and run your tasks with the classpath}
 
   s.add_development_dependency 'rspec', '~> 2.10.0'
-  s.add_dependency 'sourcify'
+  s.add_dependency 'bundler'
 
   s.executables = ['jrmvnrun']
   s.default_executable = 'jrmvnrun'
